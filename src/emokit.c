@@ -177,6 +177,31 @@ int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigne
 	return 0;
 }
 
+int emokit_attach(struct emokit_device* s,
+		  int device_vid, int device_pid,
+		  const char *serial_number)
+{
+	int dev_type;
+
+	const char *ptr=serial_number;
+	wchar_t sn[512];
+	mbstate_t ps;
+	mbsrtowcs(sn, &ptr, sizeof(sn), &ps);
+	
+	s->_dev = hid_open(device_vid, device_pid, sn);
+	if(!s->_dev) {
+	        fprintf(stderr, "Failed to open device; VID:%x, PID:%x, S/N:%s\n",
+			device_vid, device_pid, serial_number);
+		return E_EMOKIT_NOT_OPENED;
+	}
+
+	s->_is_open = 1;
+	dev_type = emokit_identify_device(s->_dev);
+	hid_get_serial_number_string(s->_dev, s->serial, MAX_STR);
+	emokit_init_crypto(s, dev_type);
+	return 0;
+}
+
 int emokit_close(struct emokit_device* s)
 {
 	if(!s->_is_open)

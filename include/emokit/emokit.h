@@ -104,6 +104,22 @@ extern "C"
 																	unsigned int device_index);
 
 	/**
+	 *
+	 * Open a HID device using a Vendor ID (VID), Product ID (PID), and optionally a serial number.
+	 *
+	 * @param s Inited device structure
+	 * @param device_vid VID to look for, usually EMOKIT_VID constant
+	 * @param device_pid PID to look for, usually EMOKIT_PID constant
+	 * @param serial_number Serial Number of the device to open (Optionally NULL)
+	 *
+	 * @return 0 if successful, < 0 for error
+	 */
+	EMOKIT_DECLSPEC int emokit_attach(struct emokit_device* s,
+					  int device_vid,
+					  int device_pid,
+					  const char *serial_number);
+
+        /**
 	 * Close an opened device
 	 *
 	 * @param s Currently opened device
