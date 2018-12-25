@@ -43,7 +43,7 @@ struct emokit_contact_quality {//values > 4000 are good
 		struct {
 			short F3, FC6, P7, T8, F7, F8, T7, P8, AF4, F4, AF3, O2, O1, FC5;
 		};
-		short value[1];
+		short value[14];
 	};
 };
 
@@ -53,7 +53,7 @@ struct emokit_frame {
 		struct {
 			int F3, FC6, P7, T8, F7, F8, T7, P8, AF4, F4, AF3, O2, O1, FC5; //raw data values
 		};
-		int value[1];
+		int value[14];
 	};
 	struct emokit_contact_quality cq;
 	char gyroX, gyroY;
