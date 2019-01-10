@@ -1,5 +1,6 @@
 /* Copyright (c) 2010, Daeken and Skadge
  * Copyright (c) 2011-2012, OpenYou Organization (http://openyou.org)
+ * Copyright (c) 2018-2019, Hiromasa YOSHIMOTO
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -71,7 +72,12 @@ struct emokit_device* emokit_create()
 	memset(s,0,sizeof(struct emokit_device));
 	s->_is_open = 0;
 	s->_is_inited = 0;
-	hid_init();
+
+	static int firsttime=1;
+	if (firsttime) {
+	    hid_init();
+	    firsttime=0;
+	}
 	s->_is_inited = 1;
 	return s;
 }
@@ -177,23 +183,52 @@ int emokit_open(struct emokit_device* s, int device_vid, int device_pid, unsigne
 	return 0;
 }
 
+static int
+open_interface(struct emokit_device* s,
+	       int device_vid, int device_pid, const char *serial, int interface)
+{
+	int result = E_EMOKIT_NOT_OPENED;
+	const char *ptr=serial;
+	wchar_t sn[512];
+	mbstate_t ps;
+	memset(&ps, 0, sizeof(ps));
+	mbsrtowcs(sn, &ptr, sizeof(sn), &ps);
+
+	struct hid_device_info *devices, *cur;
+	devices = hid_enumerate(device_vid, device_pid);
+	for (cur = devices; cur; cur = cur->next) {
+		if (cur->interface_number != interface)
+			continue;
+		if (wcscmp(sn, cur->serial_number))
+			continue;
+			
+		s->_dev = hid_open_path(cur->path);
+		if(s->_dev) {
+			result = E_EMOKIT_SUCCESS;
+		} else {
+			fprintf(stderr, "libemokit: Failed to open device %s, insuffient permissions?\n", sn);
+			result = E_EMOKIT_PERMISSION;
+		}
+	}
+	hid_free_enumeration(devices);
+	return result;
+}
+
 int emokit_attach(struct emokit_device* s,
 		  int device_vid, int device_pid,
 		  const char *serial_number)
 {
 	int dev_type;
-
-	const char *ptr=serial_number;
-	wchar_t sn[512];
-	mbstate_t ps;
-	mbsrtowcs(sn, &ptr, sizeof(sn), &ps);
-	
-	s->_dev = hid_open(device_vid, device_pid, sn);
-	if(!s->_dev) {
-	        fprintf(stderr, "Failed to open device; VID:%x, PID:%x, S/N:%s\n",
-			device_vid, device_pid, serial_number);
-		return E_EMOKIT_NOT_OPENED;
+	int r;
+	if (!s->_is_inited)
+	{
+		return E_EMOKIT_NOT_INITED;
 	}
+
+	/* We need interface #1 */
+	r = open_interface(s, device_vid, device_pid, serial_number, 1);
+	if (r)
+		return r;
 
 	s->_is_open = 1;
 	dev_type = emokit_identify_device(s->_dev);
