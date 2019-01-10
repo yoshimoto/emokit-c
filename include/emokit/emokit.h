@@ -17,9 +17,11 @@
 #ifndef LIBEMOKIT_H_
 #define LIBEMOKIT_H_
 
+#define E_EMOKIT_SUCCESS 0
 #define E_EMOKIT_DRIVER_ERROR -1
 #define E_EMOKIT_NOT_INITED -2
 #define E_EMOKIT_NOT_OPENED -3
+#define E_EMOKIT_PERMISSION -4
 
 #include <stdint.h>
 #if !defined(WIN32)
